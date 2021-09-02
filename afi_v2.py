@@ -22,8 +22,7 @@ from tkinter import filedialog
 # This needs to match the filename of the image file name, directory names it not 
 # important
 # 
-ge_file_pattern = re.compile('^(L_\d+)_(\d+)\.\d+.\d+_R(\d+)_(\S+).*\.tif$', re.IGNORECASE)
-
+ge_file_pattern = re.compile('^([A-Za-z].+[^_])_(\d+)\.\d+.\d+_R(\d+)_(\S+)_\d+bit_.*\.tif$', re.IGNORECASE)
 
 def path_exists(path):
     return os.path.isdir(path)
@@ -127,7 +126,7 @@ def write_afi(dirpath, mask_dir, spot, tif_ledger):
         image_child = ET.SubElement(root, "Image")
 
         path_child = ET.SubElement(
-        image_child, "Path").text = os.path.join(dirpath, tif_name)
+        image_child, "Path").text = os.path.join(tif_name)
 
         bitdepth_child = ET.SubElement(
         image_child, "BitDepth").text = "16"
