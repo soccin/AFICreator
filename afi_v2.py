@@ -22,7 +22,7 @@ from tkinter import filedialog
 # This needs to match the filename of the image file name, directory names it not 
 # important
 # 
-ge_file_pattern = re.compile('^([A-Za-z].+[^_])_(\d+)\.\d+.\d+_R(\d+)_(\S+)_\d+bit_.*\.tif$', re.IGNORECASE)
+ge_file_pattern = re.compile(r'^([A-Za-z].+[^_])_(\d+)\.\d+.\d+_R(\d+)_(\S+)_\d+bit_.*\.tif$', re.IGNORECASE)
 
 def path_exists(path):
     return os.path.isdir(path)
@@ -141,7 +141,7 @@ def write_afi(dirpath, mask_dir, spot, tif_ledger):
 def traverse(start_dir, mask_dir, num_stains):
     ''' traverses all subdir of start_dir, creates a tif_ledger if .tif found
         writes .afi for each spot found at dirpath to dirpath
-        (e.g. PR_Spot4_1.afi, PR_Spot2_1.afi at D:\PR_1\AFRemoved\ )
+        (e.g. PR_Spot4_1.afi, PR_Spot2_1.afi at D:/PR_1/AFRemoved/ )
         @param str start_dir: GUI field 1, actual path leading to TIF files
         @param None or str output_dir: GUI field 2, path of another machine to embed into afi
         @param None or str num_stains: GUI field 3, prints warning if spot does not contain this many files
@@ -200,7 +200,7 @@ def show_entry_fields(listbox):
             #return
 
 def add_path(cur_entry):
-    new_dir = tkFileDialog.askdirectory()
+    new_dir = filedialog.askdirectory()
     if not new_dir:
         return
     if cur_entry.get():
@@ -209,7 +209,7 @@ def add_path(cur_entry):
     update_usr(listbox, 'Added input dir %s' % (new_dir))
 
 def select_path(cur_entry):
-    new_dir = tkFileDialog.askdirectory()
+    new_dir = filedialog.askdirectory()
     if not new_dir:
         return
     cur_entry.delete(0, END)
