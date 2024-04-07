@@ -22,7 +22,16 @@ from tkinter import filedialog
 # This needs to match the filename of the image file name, directory names it not 
 # important
 # 
+
+#
+# Group (1) ==> SAMPLE_NAME (L_001, ABTC_014)
+# Group (2) ==> Cycle (int)
+# Group (3) ==> SPOT (int)
+# Group (4) ==> Marker (CD3, DAPI)
+#
+
 ge_file_pattern = re.compile(r'^([A-Za-z].+[^_])_(\d+)\.\d+.\d+_R(\d+)_(\S+)_\d+bit_.*\.tif$', re.IGNORECASE)
+
 
 def path_exists(path):
     return os.path.isdir(path)
