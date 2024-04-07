@@ -1,0 +1,5 @@
+## renaming lung images for stacking and import into halo ##
+
+1. cd into directory containing images
+# make sure "rename" script directory is correct in next step
+2. find . -print0 | xargs -0 /Users/pourmalm/Documents/Mellinghoff_lab/AFICreator/rename 's/ /_/g'
