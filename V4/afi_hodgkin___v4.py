@@ -3,8 +3,8 @@ import os
 import re
 from string import Template
 
-markerPattern=re.compile("^([^_]+)_.*_spot_(\d+).tif$")
-dapiPattern=re.compile("^S([^_]+)_.*_spot_(\d+).tif$")
+markerPattern=re.compile(r"^(.+)_AFRemoved_.*_spot_(\d+).tif$")
+dapiPattern=re.compile(r"^S([^_]+)_.*_spot_(\d+).tif$")
 
 imageTmpl=Template("""<Image>
     <Path>$fileName</Path>
@@ -28,9 +28,11 @@ if __name__=="__main__":
     start_dir=sys.argv[1]
     for dirpath, dirs, files in os.walk(start_dir):
         if files:
-            for ff in files:
+            for ff in sorted(files):
                 fullPath=os.path.abspath(dirpath)
                 sample=fullPath.split("/")[-1]
+                if not ff.endswith(".tif"):
+                    continue
                 if ff.find("dapi")>-1 or ff.find("DAPI")>-1:
                     mm=dapiPattern.search(ff)
                     cycle=mm.group(1)
@@ -38,9 +40,14 @@ if __name__=="__main__":
                     marker="DAPI"+str(int(cycle))
                 else:
                     mm=markerPattern.search(ff)
-                    marker=mm.group(1)
-                    spot=mm.group(2)
-
+                    if mm != None:
+                        marker=mm.group(1)
+                        spot=mm.group(2)
+                    else:
+                        print("\nRegex match failure")
+                        print(f"  ff={ff}")
+                        print()
+                        sys.exit()
                 printImage(sample,spot,marker,ff)
 
     for fp in ofps:
