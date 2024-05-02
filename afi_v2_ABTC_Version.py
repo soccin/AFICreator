@@ -77,7 +77,18 @@ def channel_name(file_name):
     #    return '_'.join(filename_as_list[ : filename_as_list.index('AFRemoved') ])
 
     #else:
-    return m.group(4)
+
+
+    #
+    # Current marker names are
+    #    DYE_MARKER
+    # where DYE can be Cy3, Cy5, ...
+    # Only want the MARKER part so split on '_'
+    # drop first element and rejoin in case there
+    # is an '_' in the marker name
+    #
+
+    return "_".join(m.group(4).split("_")[1:])
 
 
 def write_afi(dirpath, mask_dir, spot, tif_ledger):
