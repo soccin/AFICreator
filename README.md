@@ -78,6 +78,30 @@ One `.afi` file per spot, named `{SAMPLE}_Spot{N}.afi`:
 
 Channels are sorted alphabetically within each spot.
 
+## Testing
+
+```bash
+python3 -m pytest tests/ -v
+```
+
+The test suite lives in `tests/` and requires `pytest` (`pip install pytest`).
+It runs automatically without touching any production data directories.
+
+```
+tests/
+    conftest.py            # shared fixtures (input/golden paths)
+    test_unit.py           # pure-function tests (no I/O)
+    test_integration.py    # end-to-end golden-file test
+    data/
+        CD_PDX_010/
+            CD_PDX_010_Final/   # 488 input .ome.tif files
+        CD_PDX_010_expected/    # 8 reference .afi files (Spot0-Spot7)
+```
+
+The integration test runs `afi_v5.py` against the `CD_PDX_010` dataset,
+writes output to a temporary directory, and compares every generated `.afi`
+against the reference files in `tests/data/CD_PDX_010_expected/`.
+
 ## Requirements
 
 Python 3.9+, standard library only (`os`, `re`, `argparse`,
