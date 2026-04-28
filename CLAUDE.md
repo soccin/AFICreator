@@ -8,50 +8,47 @@ AFICreator generates HALO stitching manifest files (`.afi` files) from directori
 
 ## Running
 
-**GUI version (primary):**
 ```bash
-python3 afi_v2.py
-```
-Opens a Tkinter window with fields for input directory, output directory, and number of stains.
-
-**ABTC-specific variant:**
-```bash
-python3 afi_v2_ABTC_Version.py
+python3 afi_v5.py <input_dir> [options]
 ```
 
-**CLI version (no GUI):**
-```bash
-cd /path/where/afi/files/should/be/written
-python3 V4/afi_hodgkin___v4.py /path/to/images
-```
+### Key options
 
-**Tkinter missing:** Install via `brew install python-tk`, not pip.
+| Flag | Description |
+|---|---|
+| `--mode` | Filename convention: `halov5` (default), `legacy`, or `hodgkin` |
+| `--output-dir DIR` | Write `.afi` files here (default: alongside the TIFFs) |
+| `--num-stains N` | Skip spots that don't have exactly N files |
+| `--dry-run` | Print what would be written without creating files |
+| `--verbose` | Print one line per spot processed |
 
 ## Architecture
 
-Three active implementations with no shared library — each is a self-contained script:
+Single self-contained CLI script: `afi_v5.py`.
 
-- **`afi_v2.py`** — general-purpose GUI; the canonical version
-- **`afi_v2_ABTC_Version.py`** — GUI variant for ABTC filename conventions
-- **`V4/afi_hodgkin___v4.py`** — CLI version for automated pipelines
-- **`attic/afi.py`** — legacy, Python 2-era, do not modify
-
-All versions follow the same logic: traverse directories → group TIFFs by spot → emit XML `.afi` files named `{SAMPLE}_Spot{N}.afi`.
+Logic: traverse directories → group TIFFs by spot → filter DAPI to first and last cycle only → emit XML `.afi` files named `{SAMPLE}_Spot{N}.afi`.
 
 ## Filename Patterns
 
-**Generic (`afi_v2.py`):**
+**`--mode halov5` (default):**
 ```
-SAMPLE_CYCLE.decimal_decimal_RSPOT_MARKER_BITDEPTH.tif
+SAMPLE_CYCLE.minor.patch_RSPOT_DYE_MARKER_FINAL_*.tif
+Example: ABTC_014_1.0.1_R001_Cy3_CD3_FINAL_....tif
+```
+The DYE prefix (e.g., `Cy3_`) is stripped from the channel name. Only files containing `_FINAL_` are processed.
+
+**`--mode legacy`:**
+```
+SAMPLE_CYCLE.minor.patch_RSPOT_MARKER_BITDEPTH.tif
 Example: L_001_3.0.4_R000_CD3_16bit_AFRemoved.tif
 ```
 
-**ABTC variant (`afi_v2_ABTC_Version.py`):**
+**`--mode hodgkin`:**
 ```
-SAMPLE_CYCLE.decimal_decimal_RSPOT_DYE_MARKER_FINAL_*.tif
-Example: ABTC_014_1.0.1_R001_Cy3_CD3_FINAL_....tif
+MARKER_AFRemoved_*_spot_N.tif     (non-DAPI)
+SCYCLE_*_dapi_*_spot_N.tif       (DAPI)
 ```
-The DYE prefix (e.g., `Cy3_`) is stripped from the channel name.
+Sample name is taken from the containing directory name.
 
 ## Output Format
 
@@ -65,7 +62,7 @@ The DYE prefix (e.g., `Cy3_`) is stripped from the channel name.
 </ImageList>
 ```
 
-Channels are sorted alphabetically within each spot. Bit depth is hardcoded to 16.
+Channels are sorted alphabetically within each spot. Bit depth is hardcoded to 16. DAPI channels are filtered to first and last cycle only (e.g. DAPI1 and DAPI18); intermediates are dropped.
 
 ## Test Data
 
@@ -73,4 +70,4 @@ Example TIFFs are in `test/ABTC_001/` (282 files). Reference output is `test.afi
 
 ## Dependencies
 
-Python 3 stdlib only: `os`, `re`, `xml.etree.ElementTree`, `tkinter`.
+Python 3.9+ stdlib only: `os`, `re`, `argparse`, `xml.etree.ElementTree`.

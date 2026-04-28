@@ -8,7 +8,7 @@ immunofluorescence microscopy.
 ## Usage
 
 ```bash
-python3 V5/afi_v5.py <input_dir> [options]
+python3 afi_v5.py <input_dir> [options]
 ```
 
 ### Options
@@ -26,17 +26,17 @@ python3 V5/afi_v5.py <input_dir> [options]
 
 ```bash
 # ABTC cohort data (default mode)
-python3 V5/afi_v5.py /data/ABTC_001 --mode halov5
+python3 afi_v5.py /data/ABTC_001 --mode halov5
 
 # Preview what would be generated, then write
-python3 V5/afi_v5.py /data/slides --mode halov5 --dry-run --verbose
-python3 V5/afi_v5.py /data/slides --mode halov5 --output-dir /results/afi
+python3 afi_v5.py /data/slides --mode halov5 --dry-run --verbose
+python3 afi_v5.py /data/slides --mode halov5 --output-dir /results/afi
 
 # Multiple input directories (comma-separated also works)
-python3 V5/afi_v5.py /data/batch1 /data/batch2 --mode legacy
+python3 afi_v5.py /data/batch1 /data/batch2 --mode legacy
 
 # Validate stain count before writing
-python3 V5/afi_v5.py /data/slides --mode halov5 --num-stains 38
+python3 afi_v5.py /data/slides --mode halov5 --num-stains 38
 ```
 
 ## Filename Conventions
@@ -83,8 +83,3 @@ Channels are sorted alphabetically within each spot.
 Python 3.9+, standard library only (`os`, `re`, `argparse`,
 `xml.etree.ElementTree`).
 
-## Older Versions
-
-Earlier GUI-based scripts (`afi_v2.py`, `afi_v2_ABTC_Version.py`) and the
-previous CLI version (`V4/afi_hodgkin___v4.py`) have been moved to `attic/`
-for reference. Use V5 for all new work.
