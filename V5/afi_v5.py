@@ -6,15 +6,15 @@ multiplexed immunofluorescence image stacks.
 
 Three filename conventions are supported via --mode:
 
-  generic   L_001_3.0.4_R000_CD3_16bit_AFRemoved.tif
-  abtc      ABTC_001_1.0.4_R000_Cy3_ERG_FINAL_AFR_F.tif
+  halov5    ABTC_001_1.0.4_R000_Cy3_ERG_FINAL_AFR_F.tif
+  legacy    L_001_3.0.4_R000_CD3_16bit_AFRemoved.tif
   hodgkin   B2M_AFRemoved_pyr16_spot_001.tif  (+ DAPI variant)
 
 Usage examples:
-  python3 afi_v5.py /data/slides --mode abtc
-  python3 afi_v5.py /data/slides --mode generic --num-stains 38 --output-dir /tmp/out
+  python3 afi_v5.py /data/slides --mode halov5
+  python3 afi_v5.py /data/slides --mode legacy --num-stains 38 --output-dir /tmp/out
   python3 afi_v5.py /data/slides --mode hodgkin --dry-run --verbose
-  python3 afi_v5.py dir1,dir2,dir3 --mode abtc           # comma-separated dirs
+  python3 afi_v5.py dir1,dir2,dir3 --mode halov5          # comma-separated dirs
 """
 
 import argparse
@@ -42,7 +42,7 @@ BIT_DEPTH = "16"  # hardcoded; all HALO-compatible TIFFs in this workflow are 16
 # self-documenting and accessible by name rather than by positional index.
 # ---------------------------------------------------------------------------
 
-# -- Generic pattern --------------------------------------------------------
+# -- Legacy pattern ---------------------------------------------------------
 # Matches the general-purpose filename convention from afi_v2.py.
 #
 # Example: L_001_3.0.4_R000_CD3_16bit_AFRemoved.tif
@@ -61,7 +61,7 @@ BIT_DEPTH = "16"  # hardcoded; all HALO-compatible TIFFs in this workflow are 16
 # The version triple dots are now fully escaped (\.\d+\.\d+) — the original
 # afi_v2.py had an unescaped dot in the middle position which was a latent bug.
 # The bit-depth field (\d+bit) is consumed but not captured; it is always 16.
-GENERIC_PATTERN = re.compile(
+LEGACY_PATTERN = re.compile(
     r'^(?P<sample>[A-Za-z].+[^_])'  # sample: alpha start, no trailing underscore
     r'_(?P<cycle>\d+)\.\d+\.\d+'    # cycle + ignored version minor.patch
     r'_R(?P<spot>\d+)'              # spot: literal 'R' then integer
@@ -71,9 +71,9 @@ GENERIC_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# -- ABTC pattern -----------------------------------------------------------
+# -- HaloV5 pattern ---------------------------------------------------------
 # Matches the ABTC brain-tumor-cohort filename convention from afi_v2_ABTC_Version.py.
-# The key structural difference from generic is:
+# The key structural difference from legacy is:
 #   (a) a combined dye+marker field instead of a plain marker field
 #   (b) a required "_FINAL_" token — files without it are non-processed
 #       intermediates and must be silently skipped
@@ -84,7 +84,7 @@ GENERIC_PATTERN = re.compile(
 #   ABTC_001_18.0.4_R000_DAPI__FINAL_F.tif          → channel "DAPI18"
 #
 # Named groups:
-#   sample      — slide identifier (same rule as generic)
+#   sample      — slide identifier (same rule as legacy)
 #   cycle       — imaging cycle number (e.g. "18" from "18.0.4")
 #   spot        — ROI number after literal 'R'
 #   dye_marker  — combined dye+marker field.  Examples:
@@ -102,7 +102,7 @@ GENERIC_PATTERN = re.compile(
 #   The channel extractor checks for "dapi" BEFORE attempting dye-stripping;
 #   if that guard were absent, split("_") on "DAPI_" would yield ["DAPI", ""]
 #   and rejoin of [1:] would produce an empty string.
-ABTC_PATTERN = re.compile(
+HALOV5_PATTERN = re.compile(
     r'^(?P<sample>[A-Za-z].+[^_])'       # sample
     r'_(?P<cycle>\d+)\.\d+\.\d+'         # cycle + ignored version minor.patch
     r'_R(?P<spot>\d+)'                   # spot
@@ -190,9 +190,9 @@ class ModeConfig:
 
     Attributes:
         pattern:              Primary compiled regex for non-DAPI files (all modes)
-                              and for all files in generic/abtc modes.
+                              and for all files in legacy/halov5 modes.
         pattern_dapi:         Secondary compiled regex for DAPI files.
-                              Only used in hodgkin mode; None in generic/abtc.
+                              Only used in hodgkin mode; None in legacy/halov5.
         extract_channel:      Callable that receives a successful re.Match against
                               `pattern` and returns the resolved channel name string.
         extract_channel_dapi: Callable for DAPI matches (hodgkin only). None otherwise.
@@ -213,15 +213,15 @@ class ModeConfig:
 # ---------------------------------------------------------------------------
 
 
-def extract_channel_generic(match: re.Match) -> str:
-    """Resolve channel name for a generic-mode filename match.
+def extract_channel_legacy(match: re.Match) -> str:
+    """Resolve channel name for a legacy-mode filename match.
 
     DAPI files are detected by the marker field containing "dapi" (case-insensitive).
     Their channel is named "DAPI" followed by the integer cycle number, e.g. "DAPI3".
     All other markers are returned verbatim from the match.
 
     Args:
-        match: Successful match against GENERIC_PATTERN.
+        match: Successful match against LEGACY_PATTERN.
 
     Returns:
         Resolved channel name string.
@@ -232,8 +232,8 @@ def extract_channel_generic(match: re.Match) -> str:
     return marker
 
 
-def extract_channel_abtc(match: re.Match) -> str:
-    """Resolve channel name for an ABTC-mode filename match.
+def extract_channel_halov5(match: re.Match) -> str:
+    """Resolve channel name for a halov5-mode filename match.
 
     The dye_marker group contains the combined dye+marker token, e.g.:
       "Cy3_ERG"   → strip "Cy3"  → "ERG"
@@ -249,7 +249,7 @@ def extract_channel_abtc(match: re.Match) -> str:
     token is returned unchanged (defensive fallback; not seen in practice).
 
     Args:
-        match: Successful match against ABTC_PATTERN.
+        match: Successful match against HALOV5_PATTERN.
 
     Returns:
         Resolved channel name string.
@@ -325,8 +325,8 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Filename convention examples:\n"
-            "  generic:  L_001_3.0.4_R000_CD3_16bit_AFRemoved.tif\n"
-            "  abtc:     ABTC_001_1.0.4_R000_Cy3_ERG_FINAL_AFR_F.tif\n"
+            "  halov5:   ABTC_001_1.0.4_R000_Cy3_ERG_FINAL_AFR_F.tif\n"
+            "  legacy:   L_001_3.0.4_R000_CD3_16bit_AFRemoved.tif\n"
             "  hodgkin:  B2M_AFRemoved_pyr16_spot_001.tif\n"
             "            S037_mono_dapi_reg_pyr16_spot_001.tif\n"
         ),
@@ -344,8 +344,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["generic", "abtc", "hodgkin"],
-        default="abtc",
+        choices=["halov5", "legacy", "hodgkin"],
+        default="halov5",
         help=(
             "Filename convention to use when parsing TIFF filenames. "
             "Default: %(default)s."
@@ -380,8 +380,8 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Override the mode's default primary regex with a custom pattern. "
             "Must use the same named groups as the chosen --mode: "
-            "generic/abtc require at minimum sample, cycle, spot, and either "
-            "marker (generic) or dye_marker (abtc). "
+            "legacy/halov5 require at minimum sample, cycle, spot, and either "
+            "marker (legacy) or dye_marker (halov5). "
             "hodgkin mode requires marker and spot; use --pattern-dapi for "
             "the DAPI override."
         ),
@@ -433,19 +433,19 @@ def build_mode_config(args: argparse.Namespace) -> ModeConfig:
     if args.pattern_dapi is not None and args.mode != "hodgkin":
         sys.exit("ERROR: --pattern-dapi is only valid with --mode hodgkin")
 
-    if args.mode == "generic":
+    if args.mode == "legacy":
         config = ModeConfig(
-            pattern=GENERIC_PATTERN,
+            pattern=LEGACY_PATTERN,
             pattern_dapi=None,
-            extract_channel=extract_channel_generic,
+            extract_channel=extract_channel_legacy,
             extract_channel_dapi=None,
             sample_from_dir=False,
         )
-    elif args.mode == "abtc":
+    elif args.mode == "halov5":
         config = ModeConfig(
-            pattern=ABTC_PATTERN,
+            pattern=HALOV5_PATTERN,
             pattern_dapi=None,
-            extract_channel=extract_channel_abtc,
+            extract_channel=extract_channel_halov5,
             extract_channel_dapi=None,
             sample_from_dir=False,
         )
@@ -538,7 +538,7 @@ def match_tiff(
             return None
 
     else:
-        # Generic / ABTC mode: sample name is captured from the filename itself.
+        # Legacy / HaloV5 mode: sample name is captured from the filename itself.
         m = config.pattern.match(filename)
         if m is None:
             return None
