@@ -602,6 +602,48 @@ def collect_spot_ledger(dirpath: str, config: ModeConfig) -> SpotLedger:
 
 
 # ---------------------------------------------------------------------------
+# DAPI filtering
+# ---------------------------------------------------------------------------
+
+
+def filter_dapi_records(records: list[TiffRecord]) -> list[TiffRecord]:
+    """Keep only the first and last DAPI cycle records for a spot.
+
+    Intermediate DAPI cycles are dropped. Non-DAPI records pass through
+    unchanged. Cycle number is parsed from the channel name string
+    (e.g. "DAPI18" -> 18). Channels starting with "DAPI" whose suffix is
+    not a pure integer are treated as non-DAPI and passed through.
+
+    Args:
+        records: All TiffRecord objects for one spot.
+
+    Returns:
+        Filtered list: non-DAPI records + first-cycle DAPI + last-cycle DAPI.
+    """
+    dapi_records: list[TiffRecord] = []
+    other_records: list[TiffRecord] = []
+
+    for r in records:
+        ch = r.channel
+        if ch.upper().startswith("DAPI") and ch[4:].isdigit():
+            dapi_records.append(r)
+        else:
+            other_records.append(r)
+
+    if not dapi_records:
+        return other_records
+
+    def _cycle(r: TiffRecord) -> int:
+        return int(r.channel[4:])
+
+    min_cycle = min(_cycle(r) for r in dapi_records)
+    max_cycle = max(_cycle(r) for r in dapi_records)
+
+    kept_dapi = [r for r in dapi_records if _cycle(r) in (min_cycle, max_cycle)]
+    return other_records + kept_dapi
+
+
+# ---------------------------------------------------------------------------
 # XML generation
 # ---------------------------------------------------------------------------
 
@@ -724,6 +766,9 @@ def process_directory(
         # All records in one spot share the same sample name (guaranteed by
         # how the ledger is built from a single directory scan).
         sample = records[0].sample
+
+        # Drop intermediate DAPI cycles; keep only first and last per spot.
+        records = filter_dapi_records(records)
 
         # Stain-count validation: skip this spot if the file count doesn't
         # match the expected number of stains, and warn the user.
