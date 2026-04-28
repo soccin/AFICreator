@@ -15,7 +15,7 @@ python3 V5/afi_v5.py <input_dir> [options]
 
 | Flag | Description |
 |---|---|
-| `--mode` | Filename convention: `abtc` (default), `generic`, or `hodgkin` |
+| `--mode` | Filename convention: `halov5` (default), `legacy`, or `hodgkin` |
 | `--output-dir DIR` | Write all `.afi` files here (default: alongside the TIFFs) |
 | `--num-stains N` | Warn and skip spots that don't have exactly N files |
 | `--dry-run` | Print what would be written without creating any files |
@@ -26,22 +26,22 @@ python3 V5/afi_v5.py <input_dir> [options]
 
 ```bash
 # ABTC cohort data (default mode)
-python3 V5/afi_v5.py /data/ABTC_001 --mode abtc
+python3 V5/afi_v5.py /data/ABTC_001 --mode halov5
 
 # Preview what would be generated, then write
-python3 V5/afi_v5.py /data/slides --mode abtc --dry-run --verbose
-python3 V5/afi_v5.py /data/slides --mode abtc --output-dir /results/afi
+python3 V5/afi_v5.py /data/slides --mode halov5 --dry-run --verbose
+python3 V5/afi_v5.py /data/slides --mode halov5 --output-dir /results/afi
 
 # Multiple input directories (comma-separated also works)
-python3 V5/afi_v5.py /data/batch1 /data/batch2 --mode generic
+python3 V5/afi_v5.py /data/batch1 /data/batch2 --mode legacy
 
 # Validate stain count before writing
-python3 V5/afi_v5.py /data/slides --mode abtc --num-stains 38
+python3 V5/afi_v5.py /data/slides --mode halov5 --num-stains 38
 ```
 
 ## Filename Conventions
 
-### `--mode abtc`
+### `--mode halov5`
 ```
 SAMPLE_CYCLE.minor.patch_RSPOT_DYE_MARKER_FINAL_*.tif
 Example: ABTC_001_1.0.4_R000_Cy3_ERG_FINAL_AFR_F.tif → channel "ERG"
@@ -49,7 +49,7 @@ Example: ABTC_001_1.0.4_R000_Cy3_ERG_FINAL_AFR_F.tif → channel "ERG"
 The dye prefix (e.g. `Cy3_`) is stripped from the channel name. Only files
 containing `_FINAL_` are processed; earlier intermediates are skipped.
 
-### `--mode generic`
+### `--mode legacy`
 ```
 SAMPLE_CYCLE.minor.patch_RSPOT_MARKER_16bit_*.tif
 Example: L_001_3.0.4_R000_CD3_16bit_AFRemoved.tif → channel "CD3"
