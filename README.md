@@ -1,4 +1,4 @@
-# AFICreator
+# AFICreator v5.2.0
 
 Generates HALO stitching manifest files (`.afi`) from directories of TIFF
 images. Automates the tedious process of importing TIFF stacks and naming
